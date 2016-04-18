@@ -3,20 +3,21 @@ import org.apache.spark.{Logging, SparkConf, SparkContext}
 
 object HelloWorld extends Logging {
 
+  val hadoopConf = new org.apache.hadoop.conf.Configuration
+  val hdfs = hadoopConf.get("fs.defaultFS")
+
   val ide = false
   val debug = true
 
-  val hdfs = "hdfs://hadoop-master2:8020"
-  val source = s"$hdfs/simple-alluxion/in"
-  val target = s"$hdfs/simple-alluxion/out"
+  val source = "hdfs:///simple-alluxion/in"
+  val target = "hdfs:///simple-alluxion/out"
 
   def withDebug(conf: SparkConf): Unit = {
     if (debug) {
       System.setProperty("HADOOP_USER_NAME", "hadoop")
 
-      import org.apache.hadoop.conf.Configuration
       import org.apache.hadoop.fs.{FileSystem, Path}
-      FileSystem.get(new Configuration()).delete(new Path(s"$target"), true)
+      FileSystem.get(hadoopConf).delete(new Path(s"$target"), true)
 
       conf.set("spark.eventLog.enabled", "true")
           .set("spark.eventLog.dir", s"$hdfs/spark-eventlogs")
