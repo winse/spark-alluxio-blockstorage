@@ -1,0 +1,5 @@
+<configuration>
+  <property>
+    <name>fs.defaultFS</name><value>hdfs://hadoop-master2:8020</value>
+  </property>
+</configuration>

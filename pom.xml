@@ -10,7 +10,7 @@
   <description>off-heap alluxio spark-blockstorage</description>
 
   <properties>
-    <alluxio.version>1.0.1</alluxio.version>
+    <alluxio.version>1.1.0-SNAPSHOT</alluxio.version>
     <spark.version>1.6.0</spark.version>
     <scala.compat.version>2.10</scala.compat.version>
     <scala.version>2.10.5</scala.version>
@@ -39,12 +39,6 @@
       <version>${alluxio.version}</version>
     </dependency>
     <!-- easy read sources -->
-    <dependency>
-      <groupId>org.alluxio</groupId>
-      <artifactId>alluxio-core-client-internal</artifactId>
-      <version>${alluxio.version}</version>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>org.alluxio</groupId>
       <artifactId>alluxio-core-common</artifactId>

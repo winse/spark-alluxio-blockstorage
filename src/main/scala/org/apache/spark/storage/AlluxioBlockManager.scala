@@ -30,13 +30,15 @@ private[spark] class AlluxioBlockManager extends ExternalBlockManager with Loggi
     val masterUrl = conf.get(ExternalBlockStore.MASTER_URL, "alluxio://localhost:19998")
     val storeDir = conf.get(ExternalBlockStore.BASE_DIR, "/tmp_spark_alluxio")
     val folderName = conf.get(ExternalBlockStore.FOLD_NAME)
-    val subDirsPerAlluxio = conf.getInt("spark.externalBlockStore.subDirectories", ExternalBlockStore.SUB_DIRS_PER_DIR.toInt)
+    val subDirsPerAlluxio = conf.getInt(
+      "spark.externalBlockStore.subDirectories",
+      ExternalBlockStore.SUB_DIRS_PER_DIR.toInt)
 
     val master = new Path(masterUrl)
     chroot = new Path(master, s"$storeDir/$folderName/$executorId")
     fs = master.getFileSystem(new Configuration)
     fs.mkdirs(chroot)
-    fs.deleteOnExit(chroot)
+    fs.deleteOnExit(chroot.getParent)
 
     subDirs = new Array[Path](subDirsPerAlluxio)
   }
@@ -94,20 +96,13 @@ private[spark] class AlluxioBlockManager extends ExternalBlockManager with Loggi
   }
 
   override def getValues(blockId: BlockId): Option[Iterator[_]] = {
-    val path = getFile(blockId)
-    if (!fs.exists(path)) {
-      None
-    } else {
-      val size = fs.getFileStatus(path).getLen
-      if (size == 0) {
-        None
-      } else {
-        val input = fs.open(path)
-        Option(input).map(is =>
-          blockManager.dataDeserializeStream(blockId, input)
-        )
-      }
-    }
+    val bytes: Option[ByteBuffer] = getBytes(blockId)
+    bytes.map(bs =>
+      // alluxio.hadoop.HdfsFileInputStream#available unsupport!
+      // blockManager.dataDeserialize(blockId, input)
+
+      blockManager.dataDeserialize(blockId, bs)
+    )
   }
 
   override def getSize(blockId: BlockId): Long =
@@ -127,7 +122,7 @@ private[spark] class AlluxioBlockManager extends ExternalBlockManager with Loggi
 
   private def getFile(filename: String): Path = {
     val hash = Utils.nonNegativeHash(filename)
-    val subDirId = hash / subDirs.length
+    val subDirId = hash % subDirs.length
 
     var subDir = subDirs(subDirId)
     if (subDir == null) {
